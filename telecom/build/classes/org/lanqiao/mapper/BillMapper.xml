@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.BillDao">
+ 
+ 	<resultMap type="Bill" id="BillResultMap">
+ 		<id property="bill_id" column="bill_id"/>
+ 		<result property="bill_cost" column="bill_cost"/>
+ 		<result property="bill_createtime" column="bill_createtime"/>
+ 		<result property="bill_pay" column="bill_pay"/>
+ 		<result property="bill_status" column="bill_status"/>
+ 		
+ 		<association property="account" javaType="Account">
+ 			<id property="account_id" column="account_id"/>
+ 			<result property="user_name" column="user_name"/>
+ 			<result property="user_idcard" column="user_idcard"/>
+ 			<result property="user_login_name" column="user_login_name"/>
+ 		</association>
+ 		
+ 	</resultMap>
+ 	
+ 	<!--查询账单表下的明细  -->
+ 	<resultMap type="BillItem" id="ItemResultMap">
+ 		<id property="item_id" column="item_id"/>
+ 		<result property="item_duration" column="item_duration"/>
+ 		<result property="item_cost" column="item_cost"/>
+ 		
+ 		<association property="bussess" javaType="Bussess">
+ 			<result property="os_account" column="os_account"/>
+ 			<result property="server_ip" column="server_ip"/>
+ 		</association>
+ 		
+ 		<association property="expenses" javaType="Expenses">
+ 			<result property="eps_name" column="eps_name"/>
+ 		</association>
+ 		
+ 		<association property="bill" javaType="Bill" resultMap="BillResultMap"></association>
+ 		
+ 	</resultMap>
+ 	
+ 	<!--查询明细表下的详单  -->
+ 	<resultMap type="BillDetail" id="DetailResultMap">
+ 		<id property="detail_id" column="detail_id"/>
+ 		<result property="detail_login_time" column="detail_login_time"/>
+ 		<result property="detail_logout_time" column="detail_logout_time"/>
+ 		<result property="detail_duration" column="detail_duration"/>
+ 		<result property="detail_cost" column="detail_cost"/>
+ 		
+ 		<association property="billItem" resultMap="ItemResultMap"></association>
+ 	
+ 	</resultMap>
+ 
+ 	<!--查询所有的账单信息  -->
+ 	<select id="selectAllBills" resultMap="BillResultMap">
+ 		SELECT b.`bill_id`, u.`account_id`, u.`user_name`, u.`user_idcard`, u.`user_login_name`,
+ 		b.`bill_cost`, b.`bill_createtime`, b.`bill_pay`, b.`bill_status` 
+ 		FROM bill b LEFT JOIN userinfo  u ON b.`acc_acc`=u.`account_id`
+ 	</select>
+ 	
+ 	
+ 	<!--查询账单表下的明细  -->
+ 	<select id="selectItemOfBill" resultMap="ItemResultMap">
+ 		SELECT b3.*, b2.os_account, b2.server_ip, e.eps_name, b1.* 
+			FROM bill_item b1, bussiness b2, expenses e, 
+			(SELECT b1.bill_id, b1.`bill_cost`, b1.`bill_createtime`, u.user_login_name, u.user_name, u.user_idcard FROM bill b1 LEFT JOIN userinfo u ON b1.acc_acc = u.account_id) b3
+		WHERE b1.bus_id = b2.`bus_id` AND b1.eps_id=e.eps_id AND b1.bill_id=b3.bill_id AND b1.bill_id=#{bill_id}
+ 	
+ 	</select>
+	
+	
+	<!--查询明细表下的详单  -->
+ 	<select id="selectDetailOfItem" resultMap="DetailResultMap">
+ 		SELECT * FROM bill_detail d1, (
+			SELECT b1.item_id, b2.server_ip, e.eps_name FROM bill_item b1, bussiness b2, expenses e 
+			WHERE b1.bus_id = b2.bus_id AND b1.eps_id = e.eps_id
+		) d2 WHERE d1.item_id = d2.item_id AND d1.item_id = #{item_id}
+ 	
+ 	</select>
+ 	
+ 
+ 
+ </mapper>

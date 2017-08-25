@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.ReportDao">
+ 
+ 	<resultMap type="Report" id="ReportResultMap">
+ 	
+ 		<association property="account" javaType="Account">
+ 			<id property="account_id" column="account_id"/>
+ 			<result property="user_name" column="user_name"/>
+ 			<result property="user_login_name" column="user_login_name"/>
+ 			<result property="user_idcard" column="user_idcard"/>
+ 			<result property="user_phone" column="user_phone"/>
+ 		</association>
+ 		
+ 		<association property="billItem" javaType="BillItem">
+			<result property="item_duration" column="item_duration"/>
+			
+			<association property="bill" javaType="Bill">
+				<result property="bill_createtime" column="bill_createtime"/>
+			</association>
+ 		</association>
+ 	</resultMap>
+ 
+ 
+ 
+ 	
+ 	<select id="selectAllReports" resultMap="ReportResultMap">
+		SELECT b3.account_id,b3.user_login_name, b3.user_name,b3.user_idcard, b3.user_phone, b3.`bill_createtime`, b4.item_duration FROM (
+			SELECT b1.`bill_id`, u.account_id,u.user_login_name, u.user_name, u.user_idcard, u.user_phone, b1.`bill_createtime` 
+				FROM bill b1 LEFT JOIN userinfo u ON b1.`acc_acc`=u.`account_id`
+			) b3 LEFT JOIN (
+				SELECT b3.bill_id, SUM(item_duration) AS item_duration FROM bill_item b3 GROUP BY b3.bill_id
+		) b4 ON b3.bill_id = b4.bill_id
+
+ 	</select>
+ 	
+ 	<resultMap type="Report" id="ReportsByDurationMap">
+ 		<association property="account" javaType="Account">
+ 			<id property="account_id" column="account_id"/>
+ 			<result property="user_name" column="user_name"/>
+ 			<result property="user_login_name" column="user_login_name"/>
+ 			<result property="user_idcard" column="user_idcard"/>
+ 		
+ 		</association>
+ 		<association property="billItem" javaType="BillItem">
+ 			<result property="item_duration" column="item_duration"/>
+ 			
+ 			<association property="bussess" javaType="bussess">
+ 				<result property="server_ip" column="server_ip"/>
+ 			</association>
+ 		</association>
+ 	</resultMap>
+ 	
+ 	
+ 	<!--根据服务器ip排序  -->
+ 	<select id="selectReportsByDuration" resultMap="ReportsByDurationMap">
+ 		SELECT  b2.`server_ip`, b4.*,b1.`item_duration` FROM bill_item b1, bussiness b2,(
+			SELECT b3.bill_id, u.account_id, u.user_name, u.user_login_name, u.user_idcard FROM bill b3, userinfo u WHERE b3.acc_acc = u.`account_id`
+
+		)b4 WHERE b1.`bus_id` = b2.`bus_id` AND b1.`bill_id` = b4.bill_id ORDER BY b1.`item_duration` DESC
+ 		
+ 	</select>
+ 	
+	<!--根据服务器ip的资费标准排序  未做-->
+	<!-- <select id="selectReportsByExpense" resultMap="ReportsByExpense">
+	
+	
+	</select>
+  -->
+ 
+ 
+ </mapper>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.AccountDao">
+ 	
+	<!--添加新用户  -->
+	<insert id="insertAccount">
+		INSERT INTO userinfo(user_name, user_login_name, user_psw,
+		user_idcard, birth, sex, user_phone, email, qq, job, 
+		user_createtime, user_status, address, user_code, referee_id, referee_idcard) 
+		values(#{user_name},#{user_login_name},#{user_psw},#{user_idcard},
+		#{birth},#{sex},#{user_phone},#{email},#{qq},#{job},(select sysdate()),
+		#{user_status},#{address},#{user_code},#{referee_id},#{referee_idcard})
+	
+	</insert>
+	
+	<!-- 根据身份证号查询用户 -->
+	<select id="selectAccountByIdCard" resultType="Account">
+		SELECT * FROM userinfo WHERE user_idcard = #{user_idcard}
+	
+	</select>
+	
+	<!-- 根据身份证号查询用户 -->
+	<select id="selectAccountByIdCard2" resultType="Account">
+		SELECT * FROM userinfo WHERE user_idcard = #{user_idcard}
+	
+	</select>
+	
+	<!--查询所有的帐户  -->
+	<select id="selectAllAccount" resultType="Account">
+		select * from userinfo
+	
+	</select>
+	
+	<!-- 根据id查询用户 -->
+	<select id="selectAccountById" resultType="Account">
+		select * from userinfo where account_id = #{account_id}
+	</select>
+	
+	<!--删除帐号  -->
+	<update id="deleteAccount">
+		update userinfo set user_status = #{user_status}, service_time = (select sysdate()) 
+		where account_id = #{account_id}
+	
+	</update>
+	
+	<!--删除该账户下的所有业务  -->
+	<update id="deleteBussessOfAccount">
+		UPDATE bussiness SET buss_status = 2 WHERE account_id = #{account_id}
+	
+	</update>
+	
+	
+	<!-- 修改账号信息 -->
+	<update id="updateAccount">
+		UPDATE userinfo SET user_name=#{user_name},user_login_name=#{user_login_name},
+		user_psw=#{user_psw},user_idcard=#{user_idcard},birth=#{birth},sex=#{sex},
+		user_phone=#{user_phone},email=#{email},qq=#{qq},job=#{job},address=#{address},
+		user_code=#{user_code},referee_id=#{referee_id},referee_idcard=#{referee_idcard} 
+		WHERE account_id=#{account_id}
+	</update>
+	
+
+	<!-- 更改账户为暂停状态 -->
+	<update id="pauseAccountStatus">
+		UPDATE userinfo SET user_status = #{user_status}, 
+		service_time = (SELECT SYSDATE()) WHERE account_id = #{account_id}
+	
+	</update>
+	
+	<!-- 暂停该账户下的所有的业务的状态 -->
+	<update id="pauseBussessOfAccount">
+		UPDATE bussiness SET buss_status = 0 WHERE account_id = #{account_id}
+	
+	</update>
+	
+	<!-- 重新开启账务账号 -->
+	<update id="openAccountAgain">
+		UPDATE userinfo SET user_status = #{user_status}, service_time = NULL 
+		WHERE account_id = #{account_id}
+	
+	</update>
+	
+	<!-- 动态sql -->
+	<select id="selectAccountByCondition" resultType="Account">
+		select * from userinfo
+		<where>
+			<if test='user_idcard != ""'>
+				 and user_idcard = #{user_idcard}
+			</if>
+			
+			<if test='user_name != ""'>
+				 and user_name like #{user_name}
+			</if>
+			
+			<if test='user_login_name != ""'>
+				 and user_login_name like #{user_login_name}
+			</if>
+			
+			<if test='user_status != -1'>
+				 and user_status = #{user_status}
+			</if>
+		</where>
+	</select>
+ </mapper>
+
+

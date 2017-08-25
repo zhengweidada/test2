@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.AdminDao">
+ 
+ 	<!--对应selectAdminsById 的查询结果  -->
+ 	<resultMap type="Admins" id="AdminResultMap">
+ 		<id property="admin_id" column="admin_id"/>
+ 		<result property="admin_name" column="admin_name"/>
+ 		<result property="admin_loginname" column="admin_loginname"/>
+ 		<result property="admin_psw" column="admin_psw"/>
+ 		<result property="admin_img" column="admin_img"/>
+ 		<result property="admin_phone" column="admin_phone"/>
+ 		<result property="admin_email" column="admin_email"/>
+ 		<result property="grant_time" column="grant_time"/>
+ 		<result property="create_by" column="create_by"/>
+ 		<association property="roles" javaType="Roles">
+ 			<id property="role_id" column="role_id"/>
+ 			<result property="role_name" column="role_name"/>
+ 			<collection property="list" select="selectPermitByRoles" column="role_id">
+ 				<id property="per_id" column="per_id"/>
+				<result property="pername" column="pername"/>
+				<result property="purl" column="purl"/>
+				<result property="pclass" column="pclass"/>
+ 			</collection>
+ 		</association>
+ 	</resultMap>
+	
+	<!--往管理员表插入管理员信息，直接返回添加管理员的主键  -->
+	<insert id="insertAdmin" useGeneratedKeys="true" keyProperty="admin_id">
+		insert into admins(admin_name, admin_loginname, admin_psw, 
+		admin_img, admin_phone, admin_email, grant_time, create_by) 
+		values(#{admin_name}, #{admin_loginname}, #{admin_psw}, #{admin_img},
+		 #{admin_phone}, #{admin_email}, (SELECT SYSDATE()), #{create_by})
+	
+	</insert>
+	
+	<!-- 往管理员-角色表插入管理员-角色对应信息，与insertAdmin方法在同一事务下 -->
+	<insert id="insertAdminRole">
+		insert into admins_roles(admin_id, role_id) 
+		values(#{admins.admin_id}, #{roles.role_id})
+	</insert>
+	
+	<!-- 查询所有管理员信息，初始化查前8条 -->
+	<select id="selectAllAdmins" resultMap="AdminResultMap">
+		SELECT * FROM (SELECT a.*,ar.role_id FROM admins a LEFT JOIN 
+		admins_roles ar ON a.admin_id = ar.admin_id) a_r 
+		LEFT JOIN roles r ON a_r.role_id = r.role_id ORDER BY admin_id LIMIT 0, 8
+	
+	</select>
+	
+	<!--分页查管理员信息  -->
+	<select id="selectAllAdmins2" resultMap="AdminResultMap">
+		SELECT * FROM (SELECT a.*,ar.role_id FROM admins a LEFT JOIN 
+		admins_roles ar ON a.admin_id = ar.admin_id) a_r 
+		LEFT JOIN roles r ON a_r.role_id = r.role_id ORDER BY admin_id 
+		LIMIT #{startRecord}, #{pageSize}
+	
+	</select>
+	
+	<!-- 根据管理员的id查询管理员的信息 -->
+	<select id="selectAdminsById" resultMap="AdminResultMap">
+		SELECT * FROM admins a,(SELECT ar.admin_id, r.role_id, r.role_name 
+		FROM admins_roles ar, roles r WHERE ar.role_id =  r.role_id) a_r 
+		WHERE a.admin_id=a_r.admin_id AND a.admin_id = #{admin_id}
+	
+	</select>
+	
+	
+	
+	<!--管理员修改密码，可能会借用查询id的方法  -->
+	<select id="selectAdminsByPsw">
+		
+	
+	</select>
+	
+	<!--通过登录名查询管理员，同时查询他所有对应的角色  -->
+	<select id="selectAdminByLoginName" resultMap="AdminResultMap">
+		SELECT a.*,r.* FROM admins a NATURAL JOIN admins_roles a_r 
+		NATURAL JOIN roles r WHERE a.admin_loginname = #{admin_loginname} AND a.admin_psw = #{admin_psw}
+
+	
+	</select>
+	
+	<!-- 根据角色id查询其所拥有的权限 -->
+	<select id="selectPermitByRoles" resultType="Permissions">
+		SELECT p.per_id, p.pername, p.purl, p.pclass FROM roles_permissions rp, permissions p 
+		WHERE rp.`per_id`=p.`per_id` AND rp.`role_id` = #{role_id}
+	
+	</select>
+	
+	<!--登录时查询管理员的权限  -->
+	<!-- <select id="perOfAdmin" resultType="Permissions">
+		SELECT * FROM permissions WHERE per_id IN
+		(SELECT rp.`per_id` FROM roles_permissions rp WHERE rp.`role_id` 
+		IN (SELECT ar.`role_id` FROM admins_roles ar WHERE ar.`admin_id`=#{admin_id}))
+	
+	</select> -->
+	
+	<!-- 查询拥有某个角色的管理员 -->
+	<select id="selectAdminsOfRoles" resultMap="AdminResultMap">
+	
+		<if test='pers!=-1&amp;&amp;roles!= ""'>
+			SELECT * FROM admins WHERE admin_id IN(
+				SELECT ar.admin_id FROM admins_roles ar WHERE ar.role_id IN (
+					SELECT rp.role_id FROM roles_permissions rp NATURAL JOIN roles r WHERE rp.role_id IN (
+						SELECT rp.role_id FROM roles_permissions rp WHERE rp.per_id = #{pers}
+					) AND r.role_name =#{roles}))
+		</if>
+		
+		<if test='pers!=-1&amp;&amp;roles==""'>
+			SELECT * FROM admins WHERE admin_id IN (
+				SELECT admin_id FROM admins_roles ar WHERE ar.role_id IN (
+					SELECT rp.role_id FROM roles_permissions rp WHERE rp.per_id = #{pers})
+				)
+		</if>
+		
+		<if test='pers==-1&amp;&amp;roles!=""'>
+			SELECT * FROM admins a,(SELECT ar.admin_id, r.role_id, r.role_name 
+			FROM admins_roles ar, roles r WHERE ar.role_id =  r.role_id) a_r 
+			WHERE a.admin_id=a_r.admin_id AND a_r.role_name = #{roles}
+		
+		</if>
+		
+	</select>
+	
+	<!-- 更新管理员  -->
+	<update id="updateAdmin">
+		update admins set admin_name=#{admin_name},admin_loginname=#{admin_loginname},
+		admin_phone=#{admin_phone}, admin_email=#{admin_email} where admin_id=#{admin_id}
+	
+	</update>
+	
+	<!-- 批量修改修改管理员密码 -->
+	<update id="updateAdminPsw2">
+		<!-- <foreach collection="aList" index="index" item="admins" open="" separator=";">
+			update admins
+			<set>
+				admin_psw = #{psw}
+			</set>
+			where admin_id = #{admins.admin_id}
+			
+		</foreach> -->
+	
+		 update admins set admin_psw = #{psw} where admin_id in 
+		 <foreach collection="aList" index="index" item="admins" open="(" close=")" separator=",">    
+            #{admins.admin_id}    
+        </foreach>
+	</update>
+	
+	
+	<!-- 非批量修改管理员密码 -->
+	<update id="updateAdminPsw">
+		update admins set admin_psw = #{admin_psw} where admin_id = #{admin_id}
+	
+	</update>
+	
+	<!-- 删除管理员 -->
+	<delete id="deleteAdminFromRelation">
+		delete from admins_roles where admin_id = #{admin_id}
+	</delete>
+
+
+	
+	<!-- 删除管理员 -->
+	<delete id="deleteAdmin">
+		delete from admins where admin_id = #{admin_id}
+	</delete>
+
+	
+ 
+ 
+ </mapper>

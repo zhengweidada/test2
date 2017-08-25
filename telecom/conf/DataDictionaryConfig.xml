@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-dictionaries>
+	<data-dictionary>
+		<group value="0" name="role_permission">
+			<option value="1" name="管理员管理"/>
+			<option value="2" name="角色管理"/>
+			<option value="3" name="资费管理"/>
+			<option value="4" name="账务账号"/>
+			<option value="5" name="业务账号"/>
+			<option value="6" name="账单"/>
+			<option value="7" name="报表"/>
+		</group>
+	
+	
+		<group value="0" name="ObjectStatus">
+			<option value="0" name="detached"/>
+			<option value="1" name="new"/>
+			<option value="2" name="updated"/>
+			<option value="3" name="deleted"/>
+		</group>
+		<group value="1" name="ObjectTypes">
+			<option value="0" name="对象类型选项0"/>
+			<option value="1" name="对象类型选项1"/>
+			<option value="2" name="对象类型选项2"/>
+			<option value="3" name="对象类型选项3"/>
+			<option value="4" name="对象类型选项4"/>
+		</group>
+	</data-dictionary>
+</data-dictionaries>

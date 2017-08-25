@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.ExpenseDao">
+ 	
+	<!-- 添加资费信息 -->
+	<insert id="insertExp">
+		insert into expenses(eps_name, eps_type, eps_duration, 
+		eps_cost, eps_unitc, eps_desc, eps_createtime, eps_status)
+		values(#{eps_name}, #{eps_type}, #{eps_duration}, #{eps_cost}, 
+		#{eps_unitc}, #{eps_desc}, (SELECT SYSDATE() AS systemtime), #{eps_status})
+	
+	</insert>
+	
+	<!--查询所有资费信息  -->
+	<select id="selectAllExpense" resultType="Expenses">
+		SELECT * FROM expenses
+	
+	</select>
+	
+	<!-- 根据不同的条件对资费进行排序 -->
+	<select id="sortExpenses" resultType="Expenses">
+		select * from expenses
+			<choose>
+				<when test="field == 1">
+					<if test="sort == 0">
+						order by eps_id
+					</if>
+					<if test="sort == 1">
+						order by eps_id desc
+					</if>
+				</when>
+				<when test="field == 2">
+					<if test="sort == 0">
+						order by eps_cost
+					</if>
+					<if test="sort == 1">
+						order by eps_cost desc
+					</if>
+				</when>
+				<when test="field == 3">
+					<if test="sort == 0">
+						order by eps_duration
+					</if>
+					<if test="sort == 1">
+						order by eps_duration desc
+					</if>
+				</when>
+			</choose>
+	</select>
+	
+	<!-- 启用资费 -->
+	<update id="startExpense">
+		update expenses set eps_starttime = (SELECT SYSDATE()), 
+		eps_status = #{eps_status} where eps_id = #{eps_id}
+	</update>
+	
+	<!-- 根据资费id查询资费 -->
+	<select id="selectExpenseById" resultType="Expenses">
+		select * from expenses where eps_id = #{eps_id}
+	</select>
+	
+	<!-- 修改资费的信息 -->
+	<update id="updateExpense">
+		update expenses set eps_name=#{eps_name}, eps_type=#{eps_type}, 
+		eps_duration=#{eps_duration},eps_cost=#{eps_cost}, eps_unitc=#{eps_unitc}, 
+		eps_desc=#{eps_desc} where eps_id=#{eps_id}
+	
+	</update>
+	
+	<!-- 删除资费信息 -->
+	<update id="deleteExpense">
+		update expenses set eps_status = #{eps_status} where eps_id = #{eps_id}
+	</update>
+	
+	
+	
+ 
+ </mapper>

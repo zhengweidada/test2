@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="org.lanqiao.dao.BussessDao">
+ 	<resultMap type="Bussess" id="BussessResultMap">
+ 		<id property="buss_id" column="bus_id"/>
+ 		<result property="os_account" column="os_account"/>
+ 		<result property="os_psw" column="os_psw"/>
+ 		<result property="buss_status" column="buss_status"/>
+ 		<result property="server_ip" column="server_ip"/>
+ 		<result property="bus_create_time" column="bus_create_time"/>
+ 		<result property="service_time" column="service_time"/>
+ 		
+ 		<association property="account" javaType="Account">
+ 			<id property="account_id" column="account_id"/>
+ 			<result property="user_name" column="user_name"/>
+ 			<result property="user_login_name" column="user_login_name"/>
+ 			<result property="user_idcard" column="user_idcard"/>
+ 		</association>
+ 		<association property="expenses" javaType="Expenses">
+ 			<id property="eps_id" column="eps_id"/>
+ 			<result property="eps_name" column="eps_name"/>
+ 			<result property="eps_desc" column="eps_desc"/>
+ 		</association>
+ 	</resultMap>
+ 	
+ 	
+	<!-- 添加业务 -->
+	<insert id="insertBussess">
+		INSERT INTO bussiness(account_id, os_account, os_psw, 
+		buss_status, server_ip, eps_id, bus_create_time) 
+		VALUES(#{account.account_id},#{os_account},#{os_psw},#{buss_status},
+		#{server_ip},#{expenses.eps_id}, (select sysdate()));
+	</insert>
+	
+	<!-- 查询所有的业务 -->
+	<select id="selectAllBussesses" resultMap="BussessResultMap">
+		SELECT br.*, e.`eps_name`, e.`eps_desc` FROM(SELECT b.`bus_id`, 
+		u.`account_id`, u.`user_name`, u.`user_login_name`, u.user_idcard,
+		b.`os_account`, b.`server_ip`, b.`buss_status`, b.`bus_create_time`,
+		b.`eps_id` FROM bussiness b LEFT JOIN userinfo u ON b.`account_id`=u.`account_id`) br
+		LEFT JOIN expenses e ON br.eps_id = e.eps_id;
+	
+	</select>
+	
+	<!-- 改变业务状态，动态sql -->
+	<update id="changeBussessStatus">
+		UPDATE bussiness SET  
+		<if test="buss_status == 0">
+			buss_status = 0, service_time=(SELECT SYSDATE()) WHERE bus_id = #{buss_id}
+		</if>
+		
+		<if test="buss_status == 1">
+			buss_status = 1, service_time=(SELECT SYSDATE()) WHERE bus_id = #{buss_id}
+		</if>
+		
+		<if test="buss_status == 2">
+			buss_status = 2, service_time=(SELECT SYSDATE()) WHERE bus_id = #{buss_id}
+		</if>
+	</update>
+
+	<!-- 修改资费 -->
+	<update id="updateBussess">
+		update bussiness set eps_id = #{expenses.eps_id} where bus_id = #{buss_id}
+	
+	</update>
+	
+	<!-- 根据id查询数据 -->
+	<select id="selectedBussessById" resultMap="BussessResultMap">
+		SELECT br.*, e.`eps_name`, e.`eps_desc` FROM(SELECT b.`bus_id`, 
+		u.`account_id`, u.`user_name`, u.`user_idcard`, u.`user_login_name`, 
+		b.`os_account`, b.`server_ip`, b.`buss_status`, b.`bus_create_time`, 
+		b.`eps_id` FROM bussiness b LEFT JOIN userinfo u ON b.`account_id`=u.`account_id`) 
+		br LEFT JOIN expenses e ON br.eps_id = e.eps_id WHERE br.bus_id = #{buss_id};
+	
+	</select>
+	
+	
+	<select id="selectBussessByCondition" resultMap="BussessResultMap">
+		SELECT br.*, e.`eps_name`, e.`eps_desc` FROM(SELECT b.`bus_id`, 
+		u.`account_id`, u.`user_name`, u.`user_idcard`, u.`user_login_name`, 
+		b.`os_account`, b.`server_ip`, b.`buss_status`, b.`bus_create_time`, 
+		b.`eps_id` FROM bussiness b LEFT JOIN userinfo u ON b.`account_id`=u.`account_id`) 
+		br LEFT JOIN expenses e ON br.eps_id = e.eps_id WHERE br.bus_id = #{buss_id}
+		<if test="os_account != ''">
+			and os_account = #{os_account}
+		</if>
+		
+		<if test="server_ip != ''">
+			and server_ip = #{server_ip}
+		</if>
+		
+		<if test="user_idcard != ''">
+			and user_idcard != #{account.user_idcard}
+		</if>
+		
+		<if test="buss_status != -1">
+			and buss_status = #{buss_status}
+		</if>
+	</select>
+ </mapper>
